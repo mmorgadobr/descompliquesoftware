@@ -1,27 +1,17 @@
 import { NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY as string);
 
 export async function POST(req: Request) {
   const { company, name, email, whatsapp, message } = await req.json();
 
   try {
-    await transporter.sendMail({
-      from: `"${name}" <${process.env.SMTP_USER}>`,
-      to: process.env.SMTP_TO,
+    await sgMail.send({
+      to: process.env.SMTP_TO as string,
+      from: "contato@descompliquesoftware.com.br", // TEM que ser verificado no SendGrid
       subject: `Nova mensagem de ${name} - ${company}`,
+      replyTo: email, // 🔥 importante (responder direto pro cliente)
       html: `
         <!DOCTYPE html>
         <html>
@@ -72,12 +62,15 @@ export async function POST(req: Request) {
         </div>
         </body>
         </html>
-        `,
+      `,
     });
 
     return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Erro ao enviar e-mail" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Erro SendGrid:", error.response?.body || error);
+    return NextResponse.json(
+      { error: "Erro ao enviar e-mail" },
+      { status: 500 }
+    );
   }
 }
