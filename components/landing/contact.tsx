@@ -13,12 +13,29 @@ export function Contact() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
-    
-    // Simula envio
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    
+
+    const form = e.currentTarget
+    const data = {
+      company: (form.elements.namedItem("company") as HTMLInputElement).value,
+      name: (form.elements.namedItem("name") as HTMLInputElement).value,
+      email: (form.elements.namedItem("email") as HTMLInputElement).value,
+      whatsapp: (form.elements.namedItem("whatsapp") as HTMLInputElement).value,
+      message: (form.elements.namedItem("message") as HTMLTextAreaElement).value,
+    }
+
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+
     setIsLoading(false)
-    setIsSubmitted(true)
+
+    if (res.ok) {
+      setIsSubmitted(true)
+    } else {
+      alert("Erro ao enviar mensagem. Tente novamente.")
+    }
   }
 
   return (
